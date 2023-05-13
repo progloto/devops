@@ -1,6 +1,10 @@
 # devops
 https://www.jenkins.io/doc/book/installing/docker/#downloading-and-running-jenkins-in-docker
 
+
+sudo apt install -y --no-install-recommends openjdk-17-jdk-headless
+java --version
+
 docker network create jenkins
 
 
