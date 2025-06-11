@@ -1,0 +1,19 @@
+version: "3.8"
+services:
+  registry-99d:
+    image: registry:2
+    container_name: registry-99d
+    ports:
+      - "443:5000"
+    restart: always
+    volumes:
+      - /data/docker-registry:/var/lib/registry
+      - /etc/letsencrypt:/certs
+      - /data/auth:/auth
+    environment:
+      REGISTRY_HTTP_SECRET: COMMA-ot-Dic-maul-Etsh-ONE
+      REGISTRY_HTTP_TLS_CERTIFICATE: /certs/live/registry.99digital.co.il/fullchain.pem
+      REGISTRY_HTTP_TLS_KEY: /certs/live/registry.99digital.co.il/privkey.pem
+      REGISTRY_AUTH: htpasswd
+      REGISTRY_AUTH_HTPASSWD_REALM: "Registry 99 Realm"
+      REGISTRY_AUTH_HTPASSWD_PATH: /auth/htpasswd
