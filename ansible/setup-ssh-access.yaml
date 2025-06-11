@@ -1,0 +1,129 @@
+---
+- hosts: all
+  become: true
+  # become_user: online
+  become_user: digi
+  vars:
+    ROOTPASS: !vault |
+      $ANSIBLE_VAULT;1.1;AES256;64663164643737386633393039663431373237643263663130633036653736393436323634306134
+      3161313665653839366364396632626531643838313537650a653030363864666232643863626465
+      66383339316662333364396563303432353733623835393134383733373435363234353732323365
+      3434626330393466660a613763663262613733623734656633383266386534306533613263616163
+      61363832653866396634326239316439633637343438386661633936313137323833
+  tasks:
+    - name: Add authorized keys for vadim
+      authorized_key:
+        user: root
+        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ7t3v7etOlBpkbT0EzROAWdg/zoh8/eeSO/AUvvGicv vadim@vadiaz.com"
+        state: present
+
+    - name: Add authorized keys for 99digital
+      authorized_key:
+        user: root
+        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFZHo0GAGy9vDPi/C5FEU/dKg0klt/bAy/SCcRfVNCpY 99digital"
+        state: present
+
+    - name: Add authorized key for vit
+      authorized_key:
+        user: root
+        key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDNj4nFV32cKrYd3qldiFdEM6x367Hj0zmWXsIr7q5AgV962IlrtiEcE4zzVz8SJet+GojcmXXvCYKGONshT/bNgp87oifw7FUfN99ol6os/8T4obpCGfY5v3BifnT0O/caK6y8Ny+chaAvepbr26bDR/5/s/D/ZCrQzUeK/EqDgBNy73AzwrFxSZge+xJaGjjcpCywiHKEqIvZs04520KHZNKPB728ji6ZQcuo/IQci6OJ91jG0BZmQYkit3xvvujsgavWmXAi30FFlOjpjI4O158AkDIK+Av2JbGffLBml4xxVVbU4qWRP3yUa2xJoKyH24GfB48bE7HNjiKlw8knMF4RLahGi5nEY9tapCQRToy7ebtEnRvF7ODM4sTpprcMMpo72NMNKpaoJhYinsMUZjx31tgeXhtUDOrjoB7ck/Zv6ZCZZE13tB0ebChtEQfEXRLNWFgdajcFoEI2uS5sJUYwZZMQdZg6zvEJAAn2hqVdES1NVXyZzw1u0LHhZc= vit@MBP-TVIV"
+        state: present
+
+    - name: Identify users with UID 1000
+      command: "awk -F: '$3 == 1000 {print $1}' /etc/passwd"
+      register: users_with_uid_1000
+      changed_when: false
+
+    - name: Remove users with UID 1000, except 'online'
+      user:
+        name: "{{ item }}"
+        state: absent
+        remove: true
+      loop: "{{ users_with_uid_1000.stdout_lines }}"
+      when: item != "online"
+      ignore_errors: true
+
+    - name: Add online user
+      user:
+        name: online
+        uid: 1000
+        group: 1000
+        shell: /bin/bash
+        password: "{{ ROOTPASS }}"  # Use the Vault-encrypted variable here
+        groups:
+          - sudo
+        append: true
+      ignore_errors: true
+
+    - name: Create .ssh directory for online user
+      file:
+        path: "/home/online/.ssh"
+        owner: online
+        group: online
+        mode: "0700"
+        state: directory
+
+    - name: Add authorized keys for online user - vadim
+      authorized_key:
+        user: online
+        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ7t3v7etOlBpkbT0EzROAWdg/zoh8/eeSO/AUvvGicv vadim@vadiaz.com"
+        state: present
+
+    - name: Add authorized keys for online user - 99digital
+      authorized_key:
+        user: online
+        key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFZHo0GAGy9vDPi/C5FEU/dKg0klt/bAy/SCcRfVNCpY 99digital"
+        state: present
+
+    - name: Add authorized key for online user - vit
+      authorized_key:
+        user: online
+        key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDNj4nFV32cKrYd3qldiFdEM6x367Hj0zmWXsIr7q5AgV962IlrtiEcE4zzVz8SJet+GojcmXXvCYKGONshT/bNgp87oifw7FUfN99ol6os/8T4obpCGfY5v3BifnT0O/caK6y8Ny+chaAvepbr26bDR/5/s/D/ZCrQzUeK/EqDgBNy73AzwrFxSZge+xJaGjjcpCywiHKEqIvZs04520KHZNKPB728ji6ZQcuo/IQci6OJ91jG0BZmQYkit3xvvujsgavWmXAi30FFlOjpjI4O158AkDIK+Av2JbGffLBml4xxVVbU4qWRP3yUa2xJoKyH24GfB48bE7HNjiKlw8knMF4RLahGi5nEY9tapCQRToy7ebtEnRvF7ODM4sTpprcMMpo72NMNKpaoJhYinsMUZjx31tgeXhtUDOrjoB7ck/Zv6ZCZZE13tB0ebChtEQfEXRLNWFgdajcFoEI2uS5sJUYwZZMQdZg6zvEJAAn2hqVdES1NVXyZzw1u0LHhZc= vit@MBP-TVIV"
+        state: present
+
+    - name: Add online user to sudoers without password
+      lineinfile:
+        path: /etc/sudoers.d/online
+        line: "online  ALL=(ALL:ALL)    NOPASSWD:ALL"
+        create: yes
+
+    - name: Modify sshd_config - PubkeyAuthentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PubkeyAuthentication'
+        line: 'PubkeyAuthentication yes'
+
+    - name: Modify sshd_config - PasswordAuthentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+
+    - name: Modify sshd_config - PermitRootLogin
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
+
+    - name: Restart ssh service
+      service:
+        name: ssh
+        state: restarted
+
+  post_tasks: # Tasks that run after the main tasks, regardless of their success/failure
+    - name: Change connection user to 'online' for subsequent tasks
+      set_fact:
+        ansible_ssh_user: "online"
+
+- hosts: all
+  become: true
+  remote_user: "online" #redundant, kept for clarity
+  tasks:
+    - name: Example task to run as the 'online' user
+      command: "whoami"
+      register: whoami_result
+
+    - name: Print the user the command ran as
+      debug:
+        var: whoami_result.stdout
+

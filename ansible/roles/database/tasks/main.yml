@@ -1,0 +1,60 @@
+---
+# tasks file for database role
+- name: Install PostgreSQL and required dependencies
+  ansible.builtin.apt:
+    name:
+      - postgresql
+      - postgresql-contrib
+      - python3-psycopg2 # Required for Ansible's postgresql modules
+    state: present
+    update_cache: yes
+
+- name: Ensure PostgreSQL is started and enabled
+  ansible.builtin.service:
+    name: postgresql
+    state: started
+    enabled: yes
+
+- name: Configure PostgreSQL to listen on all addresses
+  ansible.builtin.lineinfile:
+    path: /etc/postgresql/{{ pg_version }}/main/postgresql.conf
+    regexp: "^#?listen_addresses = 'localhost'"
+    line: "listen_addresses = '*'"
+  notify: Restart postgresql
+  vars:
+    # This will need to be adjusted if you use a different postgres version
+    pg_version: "14"
+
+- name: Configure pg_hba.conf to allow remote connections
+  ansible.builtin.lineinfile:
+    path: /etc/postgresql/{{ pg_version }}/main/pg_hba.conf
+    line: "host    all             all             0.0.0.0/0               md5"
+    insertafter: EOF
+  notify: Restart postgresql
+  vars:
+    pg_version: "14"
+
+- name: Create 'admin' superuser
+  community.postgresql.postgresql_user:
+    name: admin
+    password: "digital99_access"
+    role_attr_flags: SUPERUSER
+  become_user: postgres
+
+- name: Create 'digital99_production' database
+  community.postgresql.postgresql_db:
+    name: digital99_production
+    owner: admin
+  become_user: postgres
+
+- name: Grant pg_read_all_stats to admin user
+  community.postgresql.postgresql_privs:
+    db: digital99_production
+    role: admin
+    privs: pg_read_all_stats
+    type: role
+  become_user: postgres
+
+- name: Flush Handlers
+  ansible.builtin.meta: flush_handlers
+

@@ -1,0 +1,60 @@
+---
+# tasks file for comm_server role
+
+- name: Install Nginx and Redis
+  ansible.builtin.apt:
+    name:
+      - nginx
+      - redis-server
+    state: present
+    update_cache: yes
+
+- name: Install Certbot and the Nginx plugin
+  ansible.builtin.apt:
+    name:
+      - certbot
+      - python3-certbot-nginx
+    state: present
+
+- name: Configure Nginx with the correct server_name for Certbot
+  ansible.builtin.template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-available/default
+  notify: Reload nginx
+
+- name: Configure Redis to listen on all interfaces
+  ansible.builtin.lineinfile:
+    path: /etc/redis/redis.conf
+    regexp: '^bind 127.0.0.1 ::1'
+    line: 'bind 0.0.0.0'
+  notify: Restart redis
+
+- name: Set Redis password
+  ansible.builtin.lineinfile:
+    path: /etc/redis/redis.conf
+    regexp: '^# requirepass foobared'
+    line: 'requirepass digital'
+  notify: Restart redis
+
+- name: Check if a certificate already exists
+  ansible.builtin.stat:
+    path: /etc/letsencrypt/live/hotomni.nimbusip.com/fullchain.pem
+  register: cert_file
+
+- name: Obtain and install the SSL certificate from Let's Encrypt
+  ansible.builtin.command: >
+    certbot --nginx -d hotomni.nimbusip.com --non-interactive --agree-tos -m admin@example.com --redirect
+  when: not cert_file.stat.exists
+
+- name: Ensure services are started and enabled
+  ansible.builtin.service:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - nginx
+    - redis-server
+
+- name: Force all notified handlers to run now
+  ansible.builtin.meta: flush_handlers
+

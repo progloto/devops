@@ -1,0 +1,19 @@
+# Filename: nimbus.hosts
+#
+# This file lists the servers you want Ansible to manage.
+# Defines hosts that share an IP but use different SSH ports.
+
+[apps]
+app1 ansible_host=80.246.128.147 ansible_port=2222
+app2 ansible_host=80.246.128.147 ansible_port=2223
+
+[comm_servers]
+comm ansible_host=80.246.128.147 ansible_port=2224
+
+[databases]
+db ansible_host=80.246.128.147 ansible_port=2225
+
+[all:vars]
+# This tells Ansible to use the 'digi' user's password for the SSH connection (ansible_ssh_pass).
+# The playbook uses the variable 'ansible_password' which ansible_ssh_pass defaults to.
+# ansible_ssh_pass="{{ vault_ansible_password }}"

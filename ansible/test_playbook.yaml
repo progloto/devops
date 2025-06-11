@@ -1,0 +1,14 @@
+---
+- hosts: all
+  # become: true
+  remote_user: online # Default remote user
+  become_user: online
+  become: true
+  tasks:
+    - name: Example task
+      command: whoami
+      register: whoami_result
+    - name: Print the user
+      debug:
+        var: whoami_result.stdout
+

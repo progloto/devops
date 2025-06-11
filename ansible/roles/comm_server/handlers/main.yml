@@ -1,0 +1,12 @@
+---
+# handlers file for comm_server
+- name: Restart nginx
+  ansible.builtin.service:
+    name: nginx
+    state: restarted
+
+- name: Restart redis
+  ansible.builtin.service:
+    name: redis-server
+    state: restarted
+

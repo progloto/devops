@@ -1,0 +1,34 @@
+---
+# Filename: deploy_apps.yaml
+#
+# This playbook deploys the full application stack by applying
+# specific roles to each group of hosts. It connects using SSH keys
+# and uses variables from the vault file for all plays.
+
+- name: Configure the Communication & Load Balancer Server
+  hosts: comm_servers
+  remote_user: digi
+  become: yes
+  vars_files:
+    - vault-nimbus.yml
+  roles:
+    - comm_server
+
+- name: Configure the Database Server
+  hosts: databases
+  remote_user: digi
+  become: yes
+  vars_files:
+    - vault-nimbus.yml
+  roles:
+    - database
+
+- name: Configure and Deploy the Application Servers
+  hosts: apps
+  remote_user: digi
+  become: yes
+  vars_files:
+    - vault-nimbus.yml
+  roles:
+    - app_servers
+

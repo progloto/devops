@@ -1,0 +1,22 @@
+[online1]
+#online2.99digital.co.il ansible_port=9902
+online2.99digital.co.il ansible_user=online ansible_port=9911
+#online2.99digital.co.il ansible_port=9912
+#online2.99digital.co.il ansible_port=9920
+
+[online2]
+#online2.99digital.co.il ansible_user=online ansible_port=9902
+#online2.99digital.co.il ansible_user=online ansible_port=9911
+online2.99digital.co.il ansible_user=online ansible_port=9912
+#online2.99digital.co.il ansible_user=online ansible_port=9920
+
+[datot]
+#datot.99digital.co.il ansible_user=online ansible_port=9902
+datot.99digital.co.il ansible_user=online ansible_port=9911
+#datot.99digital.co.il ansible_user=online ansible_port=9920
+
+[airwaves]
+#airwaves.99digital.co.il ansible_user=online ansible_port=9902
+airwaves.99digital.co.il ansible_user=online ansible_port=9911
+#airwaves.99digital.co.il ansible_user=online ansible_port=9920
+

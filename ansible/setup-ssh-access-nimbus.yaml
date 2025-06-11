@@ -1,0 +1,95 @@
+---
+- name: Deploy SSH public keys
+  hosts: all
+  remote_user: digi
+  become: no
+
+  vars_files:
+    - vault-nimbus.yml
+
+  # These variables are now defined for the entire play, making them
+  # available for the initial "Gathering Facts" connection.
+  vars:
+    ansible_password: "{{ vault_ansible_password }}"
+    ansible_become_pass: "{{ vault_ansible_password }}"
+
+  tasks:
+    - name: Ensure .ssh directory exists
+      ansible.builtin.file:
+        path: "/home/digi/.ssh"
+        state: directory
+        mode: '0700'
+
+    - name: Add public keys from individual .pub files
+      ansible.posix.authorized_key:
+        user: digi
+        state: present
+        key: "{{ lookup('file', item) }}"
+        # Set 'exclusive' to 'no' if you want to add keys without removing existing ones.
+        # Set to 'yes' if you want this list of keys to be the ONLY ones present.
+        exclusive: no
+      # This loop will iterate through a list of local public key files.
+      # The playbook will fail if any of these files do not exist on the controller.
+      with_items:
+        - ~/99-Digital/ssh/99digital.pub # Key from your new specified path
+        - ~/99-Digital/ssh/vadim.pub # Key from your new specified path
+
+    - name: Allow 'digi' user to run sudo without a password
+      ansible.builtin.copy:
+        dest: "/etc/sudoers.d/99-digi-nopasswd"
+        content: "digi ALL=(ALL) NOPASSWD: ALL"
+        mode: '0440'
+        owner: root
+        group: root
+        validate: 'visudo -cf %s'
+      become: yes
+
+    - name: Modify sshd_config - PubkeyAuthentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PubkeyAuthentication'
+        line: 'PubkeyAuthentication yes'
+        state: present
+        validate: 'sshd -t -f %s'
+      become: yes
+      notify: Restart sshd
+
+    - name: Modify sshd_config - PasswordAuthentication
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication'
+        line: 'PasswordAuthentication no'
+      become: yes
+      notify: Restart sshd
+
+    - name: Modify sshd_config - PermitRootLogin
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin'
+        line: 'PermitRootLogin no'
+      become: yes
+      notify: Restart sshd
+
+    - name: Force all notified handlers to run now
+      ansible.builtin.meta: flush_handlers
+
+    - name: Verify key-based connectivity (password-less)
+      ansible.builtin.ping:
+      # This is the crucial part for the test. We override the play's
+      # ansible_password variable with an empty string for this task ONLY,
+      # forcing it to rely solely on key-based authentication.
+      vars:
+        ansible_password: ""
+      register: ping_result
+      until: ping_result is succeeded
+      retries: 3
+      delay: 5
+
+  # Handlers are triggered by 'notify' statements and run once at the end of the play.
+  # This section ensures sshd is restarted only if its configuration changes.
+  handlers:
+    - name: Restart sshd
+      ansible.builtin.service:
+        name: sshd
+        state: restarted
+      become: yes
