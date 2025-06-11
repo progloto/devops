@@ -1,0 +1,24 @@
+{
+	"apps": {
+		"http": {
+			"servers": {
+				"hello": {
+					"listen": [":443"],
+					"routes": [
+						{
+							"match": [{
+								"host": ["example.com","localhost"]
+							}],
+							"handle": [{
+								"@id": "msg",
+								"handler": "static_response",
+								"body": "Hello, privacy!"
+							}]
+						}
+					]
+				}
+			}
+		}
+	}
+}
+

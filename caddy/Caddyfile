@@ -1,0 +1,15 @@
+185-47-173-82.cloud-xip.com {
+	reverse_proxy localhost:5678
+}
+
+audiocodes.99digital.co.il {
+	reverse_proxy localhost:5678
+}
+
+audiocodesformmanager.99digital.co.il {
+	reverse_proxy localhost:3333
+}
+
+audiocodesformmanagerapi.99digital.co.il {
+	reverse_proxy localhost:4000
+}

@@ -1,0 +1,53 @@
+example.com {
+	reverse_proxy localhost:5000
+}
+
+#Load-balance all requests between 3 backends:
+
+example.com {
+	reverse_proxy node1:80 node2:80 node3:80
+}
+
+#Same, but only requests within /api, and sticky by using the cookie policy:
+
+example.com {
+	reverse_proxy /api/* node1:80 node2:80 node3:80 {
+		lb_policy cookie api_sticky
+	}
+}
+
+# websocket
+chat.{$DOMAIN_NAME} {
+    proxy / app:8000 {
+	websocket
+	transparent
+    }
+}
+
+example.com {
+	root * /var/www
+	reverse_proxy /api/* localhost:5000
+	file_server
+}
+
+example.com {
+	root * /srv/public
+	encode gzip
+	php_fastcgi localhost:9000
+	# php_fastcgi unix//run/php/php8.2-fpm.sock
+	file_server
+}
+
+#Alternatively, you may use FrankenPHP, which is a distribution of Caddy which calls PHP directly using CGO (Go to C bindings). This can be up to 4x faster than with PHP-FPM, and even better if you can use the worker mode.
+
+{
+    frankenphp
+    order php_server before file_server
+}
+
+example.com {
+	root * /srv/public
+    encode zstd br gzip
+    php_server
+}
+

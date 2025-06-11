@@ -1,0 +1,21 @@
+*.example.com {
+	tls {
+		dns <provider_name> [<params...>]
+	}
+
+	@foo host foo.example.com
+	handle @foo {
+		respond "Foo!"
+	}
+
+	@bar host bar.example.com
+	handle @bar {
+		respond "Bar!"
+	}
+
+	# Fallback for otherwise unhandled domains
+	handle {
+		abort
+	}
+}
+

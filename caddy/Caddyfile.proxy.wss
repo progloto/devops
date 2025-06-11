@@ -1,0 +1,13 @@
+ai-tools-online.xyz {
+    proxy / 127.0.0.1:5000 {
+        except /socket.io
+        transparent
+    }
+
+    proxy /socket.io 127.0.0.1:5000 { 
+        websocket 
+        transparent
+    } 
+}
+import sites/*
+
